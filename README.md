@@ -29,14 +29,26 @@ O plugin original funciona muito bem em inglês, mas não oferece suporte nativo
 | `@próximo ano` | Primeiro dia do ano seguinte |
 | `@última sexta` | Sexta-feira mais recente (pode ser essa semana) |
 | `@sexta passada` | Sexta-feira da semana passada |
+| `@prox segunda` | Próxima segunda-feira (shorthand) |
+| `@ult sexta` | Sexta-feira mais recente (shorthand) |
+| `@pas domingo` | Domingo da semana passada (shorthand) |
 | `@último mês` | Primeiro dia do mês anterior |
 | `@em 5 dias` | 5 dias no futuro |
 | `@daqui a 2 semanas` | 2 semanas no futuro |
 | `@3 dias atrás` | 3 dias no passado |
+| `@7d` | 7 dias no futuro (aritmética simples) |
+| `@-3w` | 3 semanas no passado (aritmética simples) |
+| `@+1m` | 1 mês no futuro (aritmética simples) |
+| `@+2y` | 2 anos no futuro (aritmética simples) |
 | `@fim de janeiro` | Último dia de janeiro |
 | `@meados de março` | 15 de março |
 | `@natal` | 25 de dezembro |
 | `@véspera de natal` | 24 de dezembro |
+| `@dia 13` | Dia 13 do mês/ano atuais |
+| `@primeira segunda do mês` | Primeira segunda-feira do mês (se já passou, vai para o próximo mês) |
+| `@última segunda do mês` | Última segunda-feira do mês (se já passou, vai para o próximo mês) |
+| `@primeira terça de novembro` | Primeira terça-feira de novembro (se já passou, vai para o próximo ano) |
+| `@última sexta de setembro` | Última sexta-feira de setembro (se já passou, vai para o próximo ano) |
 
 ### Distinção entre "última" e "passada"
 
@@ -46,6 +58,33 @@ O plugin original funciona muito bem em inglês, mas não oferece suporte nativo
 Exemplo (considerando hoje como terça-feira, 21/01):
 - `@última segunda` → 20/01 (ontem)
 - `@segunda passada` → 13/01 (semana passada)
+
+### Shorthands para PT-BR
+
+- `prox` → `próxima/próximo`
+- `ult` → `última/último`
+- `pas` → `passada/passado`
+
+Exemplos:
+- `@prox seg` → próxima segunda-feira
+- `@ult sexta` → sexta-feira mais recente
+- `@pas domingo` → domingo da semana passada
+
+### Aritmética simples
+
+Você pode somar ou subtrair períodos com:
+- `@7d` (equivale a `@+7d`)
+- `@-3w`
+- `@+1m`
+- `@+2y`
+
+O modal de sugestão exibe uma pré-visualização da data calculada para esses formatos.
+
+### Ordinais em português (limitado)
+
+Por padrão, só aceitamos ordinais para o primeiro dia do mês:
+- `@primeiro` / `@primeira`
+- `@1º` / `@1ª` / `@1o`
 
 ### Fallback para inglês
 

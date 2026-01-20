@@ -12,6 +12,7 @@ import { generateMarkdownLink } from "src/utils";
 
 interface IDateCompletion {
   label: string;
+  preview?: string;
 }
 
 export default class DateSuggest extends EditorSuggest<IDateCompletion> {
@@ -46,6 +47,26 @@ export default class DateSuggest extends EditorSuggest<IDateCompletion> {
   }
 
   getDateSuggestions(context: EditorSuggestContext): IDateCompletion[] {
+    const queryLower = context.query.toLowerCase();
+    const weekdaysPt = [
+      "domingo",
+      "segunda",
+      "terça",
+      "quarta",
+      "quinta",
+      "sexta",
+      "sábado",
+    ];
+    const weekdaysEn = [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+    ];
+
     // Sugestões de horário (PT-BR + EN)
     if (context.query.match(/^(?:hora|time)/i)) {
       return [
@@ -59,42 +80,54 @@ export default class DateSuggest extends EditorSuggest<IDateCompletion> {
         .filter((item) => item.label.toLowerCase().startsWith(context.query));
     }
 
-    // Sugestões para "próximo/próxima/último/última/este/esta" (PT-BR)
-    if (context.query.match(/^(pr[óo]xim[oa]|[úu]ltim[oa]|est[ea])/i)) {
-      const reference = context.query.match(/^(pr[óo]xim[oa]|[úu]ltim[oa]|est[ea])/i)[1];
-      return [
-        "semana",
-        "mês",
-        "ano",
-        "domingo",
-        "segunda",
-        "terça",
-        "quarta",
-        "quinta",
-        "sexta",
-        "sábado",
-      ]
+    // Sugestões para "próximo/próxima/último/última/este/esta" + shorthands (PT-BR)
+    if (context.query.match(/^(pr[óo]xim[oa]|[úu]ltim[oa]|est[ea]|prox|ult|pas)/i)) {
+      const reference = context.query.match(
+        /^(pr[óo]xim[oa]|[úu]ltim[oa]|est[ea]|prox|ult|pas)/i
+      )[1];
+      const referenceLower = reference.toLowerCase();
+      const baseUnits =
+        referenceLower === "pas"
+          ? ["semana", ...weekdaysPt]
+          : ["semana", "mês", "ano", ...weekdaysPt];
+
+      return baseUnits
         .map((val) => ({ label: `${reference} ${val}` }))
-        .filter((items) => items.label.toLowerCase().startsWith(context.query));
+        .filter((items) => items.label.toLowerCase().startsWith(queryLower));
     }
 
     // Fallback para inglês: "next/last/this"
     if (context.query.match(/^(next|last|this)/i)) {
       const reference = context.query.match(/^(next|last|this)/i)[1];
-      return [
-        "week",
-        "month",
-        "year",
-        "Sunday",
-        "Monday",
-        "Tuesday",
-        "Wednesday",
-        "Thursday",
-        "Friday",
-        "Saturday",
-      ]
+      return ["week", "month", "year", ...weekdaysEn]
         .map((val) => ({ label: `${reference} ${val}` }))
         .filter((items) => items.label.toLowerCase().startsWith(context.query));
+    }
+
+    // Dias da semana sem prefixo (PT-BR)
+    if (queryLower) {
+      const weekdayMatches = weekdaysPt.filter((day) =>
+        day.startsWith(queryLower)
+      );
+      if (weekdayMatches.length) {
+        return weekdayMatches.map((val) => ({ label: val }));
+      }
+    }
+
+    // Dias da semana sem prefixo (EN)
+    if (queryLower) {
+      const weekdayMatches = weekdaysEn.filter((day) =>
+        day.toLowerCase().startsWith(queryLower)
+      );
+      if (weekdayMatches.length) {
+        return weekdayMatches.map((val) => ({ label: val }));
+      }
+    }
+
+    // Aritmética simples: 7d -3w +1m +2y (com pré-visualização)
+    if (context.query.match(/^[+-]?\d+\s*[dwmy](?:\s+[+-]?\d+\s*[dwmy])*\s*$/i)) {
+      const preview = this.getPreviewForSuggestion(context.query);
+      return [{ label: context.query, preview: preview || undefined }];
     }
 
     // Datas relativas em português: "em X dias", "daqui a X", "X dias atrás"
@@ -147,7 +180,27 @@ export default class DateSuggest extends EditorSuggest<IDateCompletion> {
   }
 
   renderSuggestion(suggestion: IDateCompletion, el: HTMLElement): void {
-    el.setText(suggestion.label);
+    el.empty();
+    const rowEl = el.createEl("div", {
+      attr: {
+        style: "display:flex;justify-content:space-between;gap:8px;width:100%;",
+      },
+    });
+    rowEl.createEl("span", {
+      text: suggestion.label,
+      attr: { style: "overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" },
+    });
+    const preview =
+      suggestion.preview || this.getPreviewForSuggestion(suggestion.label);
+    if (preview) {
+      rowEl.createEl("span", {
+        text: preview,
+        attr: {
+          style:
+            "color:var(--text-muted);text-align:right;white-space:nowrap;",
+        },
+      });
+    }
   }
 
   selectSuggestion(suggestion: IDateCompletion, event: KeyboardEvent | MouseEvent): void {
@@ -177,6 +230,18 @@ export default class DateSuggest extends EditorSuggest<IDateCompletion> {
     }
 
     editor.replaceRange(dateStr, this.context.start, this.context.end);
+  }
+
+  private getPreviewForSuggestion(value: string): string | null {
+    const normalized =
+      value.startsWith("time:") || value.startsWith("hora:")
+        ? value.substring(5)
+        : value;
+    const parsed = this.plugin.parseDate(normalized);
+    if (!parsed.moment.isValid()) {
+      return null;
+    }
+    return parsed.moment.format("DD/MM/YYYY");
   }
 
   onTrigger(

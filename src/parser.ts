@@ -120,6 +120,35 @@ function getConfiguredChrono(): Chrono {
     },
   } as Parser);
 
+  // Parser para aritmética simples: "7d -3w +1m +2y"
+  ptChrono.parsers.push({
+    pattern: () => {
+      return /(?:[+-]?\d+\s*[dwmy])(?:\s+[+-]?\d+\s*[dwmy])*/i;
+    },
+    extract: (context, match) => {
+      const refDate = window.moment(context.refDate);
+      let resultDate = refDate.clone();
+      const parts = match[0].matchAll(/([+-]?\d+)\s*([dwmy])/gi);
+
+      for (const part of parts) {
+        const value = parseInt(part[1]);
+        const unit = part[2].toLowerCase();
+        if (unit === "d") resultDate = resultDate.add(value, "days");
+        if (unit === "w") resultDate = resultDate.add(value, "weeks");
+        if (unit === "m") resultDate = resultDate.add(value, "months");
+        if (unit === "y") resultDate = resultDate.add(value, "years");
+      }
+
+      return {
+        day: resultDate.date(),
+        month: resultDate.month() + 1,
+        year: resultDate.year(),
+        hour: resultDate.hour(),
+        minute: resultDate.minute(),
+      };
+    },
+  } as Parser);
+
   // Também adicionar parsers do inglês como fallback
   const enChrono = new Chrono(chrono.en.createCasualConfiguration(false));
   enChrono.parsers.forEach((parser) => {
@@ -152,11 +181,12 @@ export default class NLDParser {
 
     // Regex para português E inglês
     const thisDateMatch = selectedText.match(/(?:this|est[ea])\s+([\wêç-]+)/i);
-    const nextDateMatch = selectedText.match(/(?:next|pr[óo]xim[oa])\s+([\wêç-]+)/i);
+    const nextDateMatch = selectedText.match(/(?:next|pr[óo]xim[oa]|prox)\s+([\wêç-]+)/i);
     // "última X" = a mais recente (pode ser essa semana)
-    const lastDateMatch = selectedText.match(/(?:last|[úu]ltim[oa])\s+([\wêç-]+)/i);
+    const lastDateMatch = selectedText.match(/(?:last|[úu]ltim[oa]|ult)\s+([\wêç-]+)/i);
     // "X passada/passado" = da semana passada (sempre anterior à semana atual)
-    const passadoDateMatch = selectedText.match(/([\wêç-]+)\s+passad[oa]/i);
+    const passadoDateMatch = selectedText.match(/([\wêç-]+)\s+(?:passad[oa]|pas)\b/i);
+    const passadoPrefixMatch = selectedText.match(/(?:pas)\s+([\wêç-]+)/i);
     const lastDayOfMatch = selectedText.match(
       /(?:last day of|end of|[úu]ltimo dia de?|fim de?)\s*([^\n\r]*)/i
     );
@@ -165,6 +195,122 @@ export default class NLDParser {
     const referenceDate = weekdayIsCertain
       ? window.moment().weekday(0).toDate()
       : new Date();
+
+    const weekdayMap: { [key: string]: number } = {
+      domingo: 0,
+      dom: 0,
+      segunda: 1,
+      "segunda-feira": 1,
+      seg: 1,
+      terça: 2,
+      "terça-feira": 2,
+      ter: 2,
+      quarta: 3,
+      "quarta-feira": 3,
+      qua: 3,
+      quinta: 4,
+      "quinta-feira": 4,
+      qui: 4,
+      sexta: 5,
+      "sexta-feira": 5,
+      sex: 5,
+      sábado: 6,
+      sabado: 6,
+      sab: 6,
+    };
+
+    const numericDateMatch = selectedText
+      .trim()
+      .match(/^(\d{1,2})[\/.-](\d{1,2})(?:[\/.-](\d{2,4}))?$/);
+    if (numericDateMatch) {
+      const hasYear = Boolean(numericDateMatch[3]);
+      const normalized = selectedText.trim().replace(/[-.]/g, "/");
+      const formats = hasYear ? ["D/M/YYYY", "D/M/YY"] : ["D/M"];
+      const numericMoment = window.moment(normalized, formats, true);
+      if (numericMoment.isValid()) {
+        if (!hasYear) {
+          numericMoment.year(window.moment(referenceDate).year());
+        }
+        return numericMoment.toDate();
+      }
+    }
+
+    const dayOfMonthMatch = selectedText.trim().match(/^dia\s+(\d{1,2})$/i);
+    if (dayOfMonthMatch) {
+      const dayOfMonth = parseInt(dayOfMonthMatch[1]);
+      const refMoment = window.moment(referenceDate);
+      if (dayOfMonth >= 1 && dayOfMonth <= refMoment.daysInMonth()) {
+        return refMoment.date(dayOfMonth).toDate();
+      }
+    }
+
+    const nthWeekdayMatch = selectedText
+      .trim()
+      .match(
+        /^(primeir[ao]|[úu]ltim[ao])\s+([\wêç-]+)\s+(?:do\s+m[eê]s|de\s+([\wêç-]+))$/i
+      );
+    if (nthWeekdayMatch) {
+      const occurrence = nthWeekdayMatch[1].toLowerCase();
+      const weekdayWord = nthWeekdayMatch[2].toLowerCase();
+      const monthWord = nthWeekdayMatch[3]?.toLowerCase();
+      const targetWeekday = weekdayMap[weekdayWord];
+      if (targetWeekday !== undefined) {
+        const monthMap: { [key: string]: number } = {
+          janeiro: 0,
+          fevereiro: 1,
+          março: 2,
+          marco: 2,
+          abril: 3,
+          maio: 4,
+          junho: 5,
+          julho: 6,
+          agosto: 7,
+          setembro: 8,
+          outubro: 9,
+          novembro: 10,
+          dezembro: 11,
+        };
+        const baseMoment = window.moment(referenceDate);
+        const targetMonth =
+          monthWord && monthMap[monthWord] !== undefined
+            ? monthMap[monthWord]
+            : baseMoment.month();
+        const targetYear =
+          monthWord && monthMap[monthWord] !== undefined && targetMonth < baseMoment.month()
+            ? baseMoment.year() + 1
+            : baseMoment.year();
+
+        const computeOccurrence = (year: number, month: number) => {
+          if (occurrence.startsWith("primeir")) {
+            const firstOfMonth = window
+              .moment({ year, month, day: 1 })
+              .startOf("day");
+            const firstWeekday = firstOfMonth.day();
+            const delta = (targetWeekday - firstWeekday + 7) % 7;
+            return firstOfMonth.add(delta, "days");
+          }
+
+          const lastOfMonth = window
+            .moment({ year, month })
+            .endOf("month")
+            .startOf("day");
+          const lastWeekday = lastOfMonth.day();
+          const delta = (lastWeekday - targetWeekday + 7) % 7;
+          return lastOfMonth.subtract(delta, "days");
+        };
+
+        let resultMoment = computeOccurrence(targetYear, targetMonth);
+        if (!monthWord) {
+          const refStart = window.moment(referenceDate).startOf("day");
+          if (resultMoment.isBefore(refStart)) {
+            const nextMonth = resultMoment.clone().add(1, "month");
+            resultMoment = computeOccurrence(nextMonth.year(), nextMonth.month());
+          }
+        }
+
+        return resultMoment.toDate();
+      }
+    }
 
     // Normalizar unidade de tempo (PT -> EN para processamento interno)
     const normalizeTimeUnit = (unit: string): string => {
@@ -216,22 +362,12 @@ export default class NLDParser {
       }
     }
 
-    // "segunda passada", "sexta passada" = da semana passada (sempre na semana anterior)
-    if (passadoDateMatch) {
-      const matchedWord = passadoDateMatch[1].toLowerCase();
+    // "segunda passada", "sexta passada" e "pas segunda" = da semana passada (sempre na semana anterior)
+    if (passadoDateMatch || passadoPrefixMatch) {
+      const matchedWord = (passadoDateMatch?.[1] || passadoPrefixMatch?.[1]).toLowerCase();
 
       // Dias da semana - ir para a semana passada e pegar o dia correspondente
       if (WEEKDAY_PT_TO_EN[matchedWord]) {
-        // Mapeamento do dia da semana para número (0=domingo, 1=segunda, etc.)
-        const weekdayMap: { [key: string]: number } = {
-          domingo: 0, dom: 0,
-          segunda: 1, "segunda-feira": 1, seg: 1,
-          terça: 2, "terça-feira": 2, ter: 2,
-          quarta: 3, "quarta-feira": 3, qua: 3,
-          quinta: 4, "quinta-feira": 4, qui: 4,
-          sexta: 5, "sexta-feira": 5, sex: 5,
-          sábado: 6, sabado: 6, sab: 6,
-        };
         const targetWeekday = weekdayMap[matchedWord];
         // Voltar para a semana passada e ir ao dia da semana desejado
         const lastWeek = window.moment().subtract(1, "week");
@@ -251,15 +387,6 @@ export default class NLDParser {
 
       // Dias da semana - a mais recente (pode ser essa semana, se já passou)
       if (WEEKDAY_PT_TO_EN[matchedWord]) {
-        const weekdayMap: { [key: string]: number } = {
-          domingo: 0, dom: 0,
-          segunda: 1, "segunda-feira": 1, seg: 1,
-          terça: 2, "terça-feira": 2, ter: 2,
-          quarta: 3, "quarta-feira": 3, qua: 3,
-          quinta: 4, "quinta-feira": 4, qui: 4,
-          sexta: 5, "sexta-feira": 5, sex: 5,
-          sábado: 6, sabado: 6, sab: 6,
-        };
         const targetWeekday = weekdayMap[matchedWord];
         const today = window.moment();
         const todayWeekday = today.day();
@@ -311,20 +438,21 @@ export default class NLDParser {
     // Dia da semana sem quantificador (ex: "segunda", "sexta") = dia dessa semana
     const bareWeekdayMatch = selectedText.match(/^(domingo|dom|segunda|segunda-feira|seg|terça|terça-feira|ter|quarta|quarta-feira|qua|quinta|quinta-feira|qui|sexta|sexta-feira|sex|sábado|sabado|sab)$/i);
     if (bareWeekdayMatch) {
-      const weekdayMap: { [key: string]: number } = {
-        domingo: 0, dom: 0,
-        segunda: 1, "segunda-feira": 1, seg: 1,
-        terça: 2, "terça-feira": 2, ter: 2,
-        quarta: 3, "quarta-feira": 3, qua: 3,
-        quinta: 4, "quinta-feira": 4, qui: 4,
-        sexta: 5, "sexta-feira": 5, sex: 5,
-        sábado: 6, sabado: 6, sab: 6,
-      };
       const targetWeekday = weekdayMap[bareWeekdayMatch[1].toLowerCase()];
       // Retorna o dia dessa semana, mesmo que já tenha passado
       return window.moment().day(targetWeekday).toDate();
     }
 
-    return parser.parseDate(selectedText, referenceDate, { locale });
+    const parsed = parser.parse(selectedText, referenceDate, { locale });
+    if (!parsed.length) {
+      return parser.parseDate(selectedText, referenceDate, { locale });
+    }
+
+    const result = parsed[0].start.date();
+    if (!parsed[0].start.isCertain("year")) {
+      result.setFullYear(window.moment(referenceDate).year());
+    }
+
+    return result;
   }
 }

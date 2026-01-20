@@ -193,79 +193,15 @@ export function parseOrdinalNumberPattern(match: string): number {
 // Suporte para Português Brasileiro (PT-BR)
 // ============================================
 
-// Dicionário de ordinais em português
+// Dicionário de ordinais em português (apenas 1º/primeiro)
 const ORDINAL_WORD_DICTIONARY_PT: { [word: string]: number } = {
   primeiro: 1,
   primeira: 1,
-  segundo: 2,
-  segunda: 2,
-  terceiro: 3,
-  terceira: 3,
-  quarto: 4,
-  quarta: 4,
-  quinto: 5,
-  quinta: 5,
-  sexto: 6,
-  sexta: 6,
-  sétimo: 7,
-  setimo: 7,
-  sétima: 7,
-  setima: 7,
-  oitavo: 8,
-  oitava: 8,
-  nono: 9,
-  nona: 9,
-  décimo: 10,
-  decimo: 10,
-  décima: 10,
-  decima: 10,
-  "décimo primeiro": 11,
-  "decimo primeiro": 11,
-  "décimo segundo": 12,
-  "decimo segundo": 12,
-  "décimo terceiro": 13,
-  "decimo terceiro": 13,
-  "décimo quarto": 14,
-  "decimo quarto": 14,
-  "décimo quinto": 15,
-  "decimo quinto": 15,
-  "décimo sexto": 16,
-  "decimo sexto": 16,
-  "décimo sétimo": 17,
-  "decimo setimo": 17,
-  "décimo oitavo": 18,
-  "decimo oitavo": 18,
-  "décimo nono": 19,
-  "decimo nono": 19,
-  vigésimo: 20,
-  vigesimo: 20,
-  "vigésimo primeiro": 21,
-  "vigesimo primeiro": 21,
-  "vigésimo segundo": 22,
-  "vigesimo segundo": 22,
-  "vigésimo terceiro": 23,
-  "vigesimo terceiro": 23,
-  "vigésimo quarto": 24,
-  "vigesimo quarto": 24,
-  "vigésimo quinto": 25,
-  "vigesimo quinto": 25,
-  "vigésimo sexto": 26,
-  "vigesimo sexto": 26,
-  "vigésimo sétimo": 27,
-  "vigesimo setimo": 27,
-  "vigésimo oitavo": 28,
-  "vigesimo oitavo": 28,
-  "vigésimo nono": 29,
-  "vigesimo nono": 29,
-  trigésimo: 30,
-  trigesimo: 30,
-  "trigésimo primeiro": 31,
-  "trigesimo primeiro": 31,
 };
 
 export const ORDINAL_NUMBER_PATTERN_PT = `(?:${matchAnyPattern(
   ORDINAL_WORD_DICTIONARY_PT
-)}|[0-9]{1,2}[ºª]?)`;
+)}|1[ºªo]?)`;
 
 export function parseOrdinalNumberPatternPT(match: string): number {
   let num = match.toLowerCase();
