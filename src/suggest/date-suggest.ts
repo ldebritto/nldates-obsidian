@@ -31,7 +31,7 @@ export default class DateSuggest extends EditorSuggest<IDateCompletion> {
     });
 
     if (this.plugin.settings.autosuggestToggleLink) {
-      this.setInstructions([{ command: "Shift", purpose: "Keep text as alias" }]);
+      this.setInstructions([{ command: "Shift", purpose: "Manter texto como alias" }]);
     }
   }
 
@@ -46,13 +46,41 @@ export default class DateSuggest extends EditorSuggest<IDateCompletion> {
   }
 
   getDateSuggestions(context: EditorSuggestContext): IDateCompletion[] {
-    if (context.query.match(/^time/)) {
-      return ["now", "+15 minutes", "+1 hour", "-15 minutes", "-1 hour"]
-        .map((val) => ({ label: `time:${val}` }))
+    // Sugestões de horário (PT-BR + EN)
+    if (context.query.match(/^(?:hora|time)/i)) {
+      return [
+        "agora",
+        "+15 minutos",
+        "+1 hora",
+        "-15 minutos",
+        "-1 hora",
+      ]
+        .map((val) => ({ label: `hora:${val}` }))
         .filter((item) => item.label.toLowerCase().startsWith(context.query));
     }
-    if (context.query.match(/(next|last|this)/i)) {
-      const reference = context.query.match(/(next|last|this)/i)[1];
+
+    // Sugestões para "próximo/próxima/último/última/este/esta" (PT-BR)
+    if (context.query.match(/^(pr[óo]xim[oa]|[úu]ltim[oa]|est[ea])/i)) {
+      const reference = context.query.match(/^(pr[óo]xim[oa]|[úu]ltim[oa]|est[ea])/i)[1];
+      return [
+        "semana",
+        "mês",
+        "ano",
+        "domingo",
+        "segunda",
+        "terça",
+        "quarta",
+        "quinta",
+        "sexta",
+        "sábado",
+      ]
+        .map((val) => ({ label: `${reference} ${val}` }))
+        .filter((items) => items.label.toLowerCase().startsWith(context.query));
+    }
+
+    // Fallback para inglês: "next/last/this"
+    if (context.query.match(/^(next|last|this)/i)) {
+      const reference = context.query.match(/^(next|last|this)/i)[1];
       return [
         "week",
         "month",
@@ -69,10 +97,29 @@ export default class DateSuggest extends EditorSuggest<IDateCompletion> {
         .filter((items) => items.label.toLowerCase().startsWith(context.query));
     }
 
-    const relativeDate =
-      context.query.match(/^in ([+-]?\d+)/i) || context.query.match(/^([+-]?\d+)/i);
-    if (relativeDate) {
-      const timeDelta = relativeDate[1];
+    // Datas relativas em português: "em X dias", "daqui a X", "X dias atrás"
+    const relativeDatePT =
+      context.query.match(/^(?:em|daqui\s*a?)\s*([+-]?\d+)/i) ||
+      context.query.match(/^([+-]?\d+)\s*(?:dias?|semanas?|mês|meses|anos?|horas?|minutos?)/i);
+    if (relativeDatePT) {
+      const timeDelta = relativeDatePT[1];
+      return [
+        { label: `em ${timeDelta} minutos` },
+        { label: `em ${timeDelta} horas` },
+        { label: `em ${timeDelta} dias` },
+        { label: `em ${timeDelta} semanas` },
+        { label: `em ${timeDelta} meses` },
+        { label: `${timeDelta} dias atrás` },
+        { label: `${timeDelta} semanas atrás` },
+        { label: `${timeDelta} meses atrás` },
+      ].filter((items) => items.label.toLowerCase().startsWith(context.query));
+    }
+
+    // Datas relativas em inglês: "in X days", "X days ago"
+    const relativeDateEN =
+      context.query.match(/^in\s+([+-]?\d+)/i) || context.query.match(/^([+-]?\d+)\s*(?:days?|weeks?|months?|hours?|minutes?)/i);
+    if (relativeDateEN) {
+      const timeDelta = relativeDateEN[1];
       return [
         { label: `in ${timeDelta} minutes` },
         { label: `in ${timeDelta} hours` },
@@ -85,9 +132,18 @@ export default class DateSuggest extends EditorSuggest<IDateCompletion> {
       ].filter((items) => items.label.toLowerCase().startsWith(context.query));
     }
 
-    return [{ label: "Today" }, { label: "Yesterday" }, { label: "Tomorrow" }].filter(
-      (items) => items.label.toLowerCase().startsWith(context.query)
-    );
+    // Sugestões padrão: português primeiro, depois inglês
+    return [
+      // Português
+      { label: "hoje" },
+      { label: "ontem" },
+      { label: "amanhã" },
+      { label: "agora" },
+      // Inglês (fallback)
+      { label: "today" },
+      { label: "yesterday" },
+      { label: "tomorrow" },
+    ].filter((items) => items.label.toLowerCase().startsWith(context.query));
   }
 
   renderSuggestion(suggestion: IDateCompletion, el: HTMLElement): void {
@@ -101,8 +157,11 @@ export default class DateSuggest extends EditorSuggest<IDateCompletion> {
     let dateStr = "";
     let makeIntoLink = this.plugin.settings.autosuggestToggleLink;
 
-    if (suggestion.label.startsWith("time:")) {
-      const timePart = suggestion.label.substring(5);
+    // Suporte para "hora:" (PT-BR) além de "time:" (EN)
+    if (suggestion.label.startsWith("time:") || suggestion.label.startsWith("hora:")) {
+      const timePart = suggestion.label.startsWith("time:")
+        ? suggestion.label.substring(5)
+        : suggestion.label.substring(5);
       dateStr = this.plugin.parseTime(timePart).formattedString;
       makeIntoLink = false;
     } else {
@@ -148,7 +207,8 @@ export default class DateSuggest extends EditorSuggest<IDateCompletion> {
     );
 
     // Short-circuit if `@` as a part of a word (e.g. part of an email address)
-    if (precedingChar && /[`a-zA-Z0-9]/.test(precedingChar)) {
+    // Inclui caracteres acentuados comuns em português
+    if (precedingChar && /[`a-zA-ZÀ-ÿ0-9]/.test(precedingChar)) {
       return null;
     }
 

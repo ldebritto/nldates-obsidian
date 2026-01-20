@@ -1,7 +1,7 @@
 {
-  "name": "nldates-obsidian",
-  "version": "0.6.2",
-  "description": "Plugin to parse natural language dates in Obsidian",
+  "name": "datas-em-linguagem-natural",
+  "version": "0.7.0",
+  "description": "Plugin para interpretar datas em linguagem natural (PT-BR) no Obsidian",
   "main": "main.js",
   "scripts": {
     "lint": "eslint . --ext .ts",
