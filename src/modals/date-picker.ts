@@ -26,7 +26,7 @@ export default class DatePickerModal extends Modal {
         cleanDateInput = dateInput.slice(0, -1);
       }
 
-      const parsedDate = this.plugin.parseDate(cleanDateInput || "today");
+      const parsedDate = this.plugin.parseDate(cleanDateInput || "hoje");
       let parsedDateString = parsedDate.moment.isValid()
         ? parsedDate.moment.format(momentFormat)
         : "";
@@ -44,10 +44,10 @@ export default class DatePickerModal extends Modal {
 
     this.contentEl.createEl("form", {}, (formEl) => {
       const dateInputEl = new Setting(formEl)
-        .setName("Date")
+        .setName("Data")
         .setDesc(getDateStr())
         .addText((textEl) => {
-          textEl.setPlaceholder("Today");
+          textEl.setPlaceholder("Hoje");
 
           textEl.onChange((value) => {
             dateInput = value;
@@ -59,8 +59,8 @@ export default class DatePickerModal extends Modal {
       previewEl = dateInputEl.descEl;
 
       new Setting(formEl)
-        .setName("Date Format")
-        .setDesc("Moment format to be used")
+        .setName("Formato da data")
+        .setDesc("Formato Moment a ser usado")
         .addMomentFormat((momentEl) => {
           momentEl.setPlaceholder("YYYY-MM-DD HH:mm");
           momentEl.setValue(momentFormat);
@@ -72,7 +72,7 @@ export default class DatePickerModal extends Modal {
             previewEl.setText(getDateStr());
           });
         });
-      new Setting(formEl).setName("Add as link?").addToggle((toggleEl) => {
+      new Setting(formEl).setName("Inserir como link?").addToggle((toggleEl) => {
         toggleEl.setValue(this.plugin.settings.modalToggleLink).onChange((value) => {
           insertAsLink = value;
           this.plugin.settings.modalToggleLink = insertAsLink;
@@ -84,12 +84,12 @@ export default class DatePickerModal extends Modal {
 
       formEl.createDiv("modal-button-container", (buttonContainerEl) => {
         buttonContainerEl
-          .createEl("button", { attr: { type: "button" }, text: "Never mind" })
+          .createEl("button", { attr: { type: "button" }, text: "Cancelar" })
           .addEventListener("click", () => this.close());
         buttonContainerEl.createEl("button", {
           attr: { type: "submit" },
           cls: "mod-cta",
-          text: "Insert Date",
+          text: "Inserir Data",
         });
       });
 

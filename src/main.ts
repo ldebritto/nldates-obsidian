@@ -21,56 +21,56 @@ export default class NaturalLanguageDates extends Plugin {
 
     this.addCommand({
       id: "nlp-dates",
-      name: "Parse natural language date",
+      name: "Interpretar data em linguagem natural",
       callback: () => getParseCommand(this, "replace"),
       hotkeys: [],
     });
 
     this.addCommand({
       id: "nlp-dates-link",
-      name: "Parse natural language date (as link)",
+      name: "Interpretar data em linguagem natural (como link)",
       callback: () => getParseCommand(this, "link"),
       hotkeys: [],
     });
 
     this.addCommand({
       id: "nlp-date-clean",
-      name: "Parse natural language date (as plain text)",
+      name: "Interpretar data em linguagem natural (como texto)",
       callback: () => getParseCommand(this, "clean"),
       hotkeys: [],
     });
 
     this.addCommand({
       id: "nlp-parse-time",
-      name: "Parse natural language time",
+      name: "Interpretar hora em linguagem natural",
       callback: () => getParseCommand(this, "time"),
       hotkeys: [],
     });
 
     this.addCommand({
       id: "nlp-now",
-      name: "Insert the current date and time",
+      name: "Inserir data e hora atuais",
       callback: () => getNowCommand(this),
       hotkeys: [],
     });
 
     this.addCommand({
       id: "nlp-today",
-      name: "Insert the current date",
+      name: "Inserir data atual",
       callback: () => getCurrentDateCommand(this),
       hotkeys: [],
     });
 
     this.addCommand({
       id: "nlp-time",
-      name: "Insert the current time",
+      name: "Inserir hora atual",
       callback: () => getCurrentTimeCommand(this),
       hotkeys: [],
     });
 
     this.addCommand({
       id: "nlp-picker",
-      name: "Date picker",
+      name: "Seletor de datas",
       checkCallback: (checking: boolean) => {
         if (checking) {
           return !!this.app.workspace.getActiveViewOfType(MarkdownView);
@@ -91,7 +91,7 @@ export default class NaturalLanguageDates extends Plugin {
   }
 
   onunload(): void {
-    console.log("Unloading natural language date parser plugin");
+    console.log("Descarregando plugin de datas em linguagem natural");
   }
 
   async loadSettings(): Promise<void> {
@@ -111,7 +111,7 @@ export default class NaturalLanguageDates extends Plugin {
     const date = this.parser.getParsedDate(dateString, this.settings.weekStart);
     const formattedString = getFormattedDate(date, format);
     if (formattedString === "Invalid date") {
-      console.debug("Input date " + dateString + " can't be parsed by nldates");
+      console.debug("Data de entrada " + dateString + " não pôde ser interpretada");
     }
 
     return {

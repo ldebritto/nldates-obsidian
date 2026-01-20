@@ -52,6 +52,17 @@ const weekdays = [
   "saturday",
 ];
 
+// Nomes dos dias em português para exibição
+const weekdaysPT: { [key: string]: string } = {
+  sunday: "Domingo",
+  monday: "Segunda-feira",
+  tuesday: "Terça-feira",
+  wednesday: "Quarta-feira",
+  thursday: "Quinta-feira",
+  friday: "Sexta-feira",
+  saturday: "Sábado",
+};
+
 export class NLDSettingsTab extends PluginSettingTab {
   plugin: NaturalLanguageDates;
 
@@ -62,22 +73,22 @@ export class NLDSettingsTab extends PluginSettingTab {
 
   display(): void {
     const { containerEl } = this;
-    const localizedWeekdays = window.moment.weekdays();
     const localeWeekStart = getLocaleWeekStart();
+    const localeWeekStartPT = weekdaysPT[localeWeekStart] || localeWeekStart;
 
     containerEl.empty();
 
     containerEl.createEl("h2", {
-      text: "Natural Language Dates",
+      text: "Datas em Linguagem Natural",
     });
 
     containerEl.createEl("h3", {
-      text: "Parser settings",
+      text: "Configurações do Parser",
     });
 
     new Setting(containerEl)
-      .setName("Date format")
-      .setDesc("Output format for parsed dates")
+      .setName("Formato da data")
+      .setDesc("Formato de saída para datas interpretadas")
       .addMomentFormat((text) =>
         text
           .setDefaultFormat("YYYY-MM-DD")
@@ -89,12 +100,12 @@ export class NLDSettingsTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("Week starts on")
-      .setDesc("Which day to consider as the start of the week")
+      .setName("Início da semana")
+      .setDesc("Qual dia considerar como início da semana")
       .addDropdown((dropdown) => {
-        dropdown.addOption("locale-default", `Locale default (${localeWeekStart})`);
-        localizedWeekdays.forEach((day, i) => {
-          dropdown.addOption(weekdays[i], day);
+        dropdown.addOption("locale-default", `Padrão do sistema (${localeWeekStartPT})`);
+        weekdays.forEach((day) => {
+          dropdown.addOption(day, weekdaysPT[day]);
         });
         dropdown.setValue(this.plugin.settings.weekStart.toLowerCase());
         dropdown.onChange(async (value: DayOfWeek) => {
@@ -104,12 +115,12 @@ export class NLDSettingsTab extends PluginSettingTab {
       });
 
     containerEl.createEl("h3", {
-      text: "Hotkey formatting settings",
+      text: "Configurações de Atalhos",
     });
 
     new Setting(containerEl)
-      .setName("Time format")
-      .setDesc("Format for the hotkeys that include the current time")
+      .setName("Formato da hora")
+      .setDesc("Formato para atalhos que incluem a hora atual")
       .addMomentFormat((text) =>
         text
           .setDefaultFormat("HH:mm")
@@ -121,11 +132,11 @@ export class NLDSettingsTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("Separator")
-      .setDesc("Separator between date and time for entries that have both")
+      .setName("Separador")
+      .setDesc("Separador entre data e hora para entradas que incluem ambos")
       .addText((text) =>
         text
-          .setPlaceholder("Separator is empty")
+          .setPlaceholder("Separador vazio")
           .setValue(this.plugin.settings.separator)
           .onChange(async (value) => {
             this.plugin.settings.separator = value;
@@ -134,13 +145,13 @@ export class NLDSettingsTab extends PluginSettingTab {
       );
 
     containerEl.createEl("h3", {
-      text: "Date Autosuggest",
+      text: "Autosugestão de Datas",
     });
 
     new Setting(containerEl)
-      .setName("Enable date autosuggest")
+      .setName("Ativar autosugestão")
       .setDesc(
-        `Input dates with natural language. Open the suggest menu with ${this.plugin.settings.autocompleteTriggerPhrase}`
+        `Digite datas em linguagem natural. Abra o menu de sugestões com ${this.plugin.settings.autocompleteTriggerPhrase}`
       )
       .addToggle((toggle) =>
         toggle
@@ -152,9 +163,9 @@ export class NLDSettingsTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("Add dates as link?")
+      .setName("Inserir como link?")
       .setDesc(
-        "If enabled, dates created via autosuggest will be wrapped in [[wikilinks]]"
+        "Se ativado, datas criadas via autosugestão serão inseridas como [[wikilinks]]"
       )
       .addToggle((toggle) =>
         toggle
@@ -166,8 +177,8 @@ export class NLDSettingsTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("Trigger phrase")
-      .setDesc("Character(s) that will cause the date autosuggest to open")
+      .setName("Caractere gatilho")
+      .setDesc("Caractere(s) que abrirão o menu de autosugestão de datas")
       .addMomentFormat((text) =>
         text
           .setPlaceholder(DEFAULT_SETTINGS.autocompleteTriggerPhrase)
