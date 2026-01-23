@@ -1,6 +1,7 @@
 import { MarkdownView, ObsidianProtocolData, Plugin } from "obsidian";
 
 import DatePickerModal from "./modals/date-picker";
+import GoToDateModal from "./modals/goto-date";
 import NLDParser, { NLDResult } from "./parser";
 import { NLDSettingsTab, NLDSettings, DEFAULT_SETTINGS } from "./settings";
 import DateSuggest from "./suggest/date-suggest";
@@ -77,6 +78,13 @@ export default class NaturalLanguageDates extends Plugin {
         }
         new DatePickerModal(this.app, this).open();
       },
+      hotkeys: [],
+    });
+
+    this.addCommand({
+      id: "nlp-goto-daily",
+      name: "Ir para nota diária",
+      callback: () => new GoToDateModal(this.app, this).open(),
       hotkeys: [],
     });
 

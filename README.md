@@ -24,12 +24,14 @@ O plugin original funciona muito bem em inglês, mas não oferece suporte nativo
 | `@amanhã` | Data de amanhã |
 | `@ontem` | Data de ontem |
 | `@agora` | Data e hora atual |
+| `@segunda` | Próxima segunda-feira (dias sem qualificador sempre apontam para o futuro) |
 | `@próxima segunda` | Próxima segunda-feira |
 | `@próximo mês` | Primeiro dia do mês seguinte |
 | `@próximo ano` | Primeiro dia do ano seguinte |
 | `@última sexta` | Sexta-feira mais recente (pode ser essa semana) |
 | `@sexta passada` | Sexta-feira da semana passada |
-| `@prox segunda` | Próxima segunda-feira (shorthand) |
+| `@próx segunda` | Próxima segunda-feira (shorthand) |
+| `@próx sem` | Próxima semana (shorthand) |
 | `@ult sexta` | Sexta-feira mais recente (shorthand) |
 | `@pas domingo` | Domingo da semana passada (shorthand) |
 | `@último mês` | Primeiro dia do mês anterior |
@@ -50,23 +52,42 @@ O plugin original funciona muito bem em inglês, mas não oferece suporte nativo
 | `@primeira terça de novembro` | Primeira terça-feira de novembro (se já passou, vai para o próximo ano) |
 | `@última sexta de setembro` | Última sexta-feira de setembro (se já passou, vai para o próximo ano) |
 
+### Dias da semana sem qualificador
+
+Ao digitar apenas o nome do dia (ex: `@segunda`, `@sexta`), o plugin sempre retorna a **próxima ocorrência** desse dia:
+
+- Se o dia ainda não passou essa semana, retorna essa semana
+- Se o dia já passou ou é hoje, retorna a próxima semana
+
 ### Distinção entre "última" e "passada"
 
 - **"última X"** → a ocorrência mais recente desse dia (pode ser essa semana, se já passou)
 - **"X passada"** → sempre da semana anterior
 
-Exemplo (considerando hoje como terça-feira, 21/01):
-- `@última segunda` → 20/01 (ontem)
+Exemplo (considerando hoje como quinta-feira, 23/01):
+- `@segunda` → 27/01 (próxima segunda)
+- `@última segunda` → 20/01 (segunda dessa semana, que já passou)
 - `@segunda passada` → 13/01 (semana passada)
 
 ### Shorthands para PT-BR
 
-- `prox` → `próxima/próximo`
-- `ult` → `última/último`
-- `pas` → `passada/passado`
+| Shorthand | Equivale a |
+|-----------|------------|
+| `próx` ou `prox` | `próxima/próximo` |
+| `ult` | `última/último` |
+| `pas` | `passada/passado` |
+| `sem` | `semana` |
+| `seg` | `segunda` |
+| `ter` | `terça` |
+| `qua` | `quarta` |
+| `qui` | `quinta` |
+| `sex` | `sexta` |
+| `sab` ou `sáb` | `sábado` |
+| `dom` | `domingo` |
 
 Exemplos:
-- `@prox seg` → próxima segunda-feira
+- `@próx seg` → próxima segunda-feira
+- `@próx sem` → próxima semana
 - `@ult sexta` → sexta-feira mais recente
 - `@pas domingo` → domingo da semana passada
 
@@ -92,6 +113,37 @@ Todas as expressões em inglês do plugin original continuam funcionando:
 - `@today`, `@tomorrow`, `@yesterday`
 - `@next week`, `@last friday`
 - `@in 5 days`, `@2 weeks ago`
+
+## Comandos
+
+O plugin oferece os seguintes comandos (acessíveis via `Cmd/Ctrl + P`):
+
+| Comando | Descrição |
+|---------|-----------|
+| **Ir para nota diária** | Abre um modal para navegar para uma nota diária usando linguagem natural. Use `Cmd/Ctrl + Enter` para abrir em nova aba. |
+| **Interpretar data em linguagem natural** | Converte texto selecionado em wikilink de data |
+| **Interpretar data (como link)** | Converte texto selecionado em link markdown |
+| **Interpretar data (como texto)** | Converte texto selecionado em texto simples |
+| **Seletor de datas** | Abre modal para inserir data com opções de formatação |
+| **Inserir data atual** | Insere a data de hoje |
+| **Inserir hora atual** | Insere a hora atual |
+| **Inserir data e hora atuais** | Insere data e hora atuais |
+
+### Ir para nota diária
+
+O comando "Ir para nota diária" permite navegar rapidamente para qualquer nota diária usando linguagem natural:
+
+1. Abra a paleta de comandos (`Cmd/Ctrl + P`)
+2. Digite "Ir para nota diária"
+3. No modal, digite a data em linguagem natural (ex: "ontem", "próxima segunda", "15/01")
+4. Pressione Enter para confirmar
+
+**Atalhos de abertura:**
+- `Enter` → abre na aba atual
+- `Cmd/Ctrl + Enter` → abre em nova aba
+- `Cmd/Ctrl + Alt + Enter` → abre em grupo à direita (split view)
+
+A nota diária será criada automaticamente se não existir, usando o template e pasta configurados no plugin "Daily Notes" do Obsidian.
 
 ## Instalação
 

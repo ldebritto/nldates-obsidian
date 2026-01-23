@@ -67,6 +67,18 @@ export default class DateSuggest extends EditorSuggest<IDateCompletion> {
       "Saturday",
     ];
 
+    // Mapeamento de abreviações para dias completos
+    const weekdayAbbrevPt: { [key: string]: string } = {
+      dom: "domingo",
+      seg: "segunda",
+      ter: "terça",
+      qua: "quarta",
+      qui: "quinta",
+      sex: "sexta",
+      sab: "sábado",
+      sáb: "sábado",
+    };
+
     // Sugestões de horário (PT-BR + EN)
     if (context.query.match(/^(?:hora|time)/i)) {
       return [
@@ -81,9 +93,9 @@ export default class DateSuggest extends EditorSuggest<IDateCompletion> {
     }
 
     // Sugestões para "próximo/próxima/último/última/este/esta" + shorthands (PT-BR)
-    if (context.query.match(/^(pr[óo]xim[oa]|[úu]ltim[oa]|est[ea]|prox|ult|pas)/i)) {
+    if (context.query.match(/^(pr[óo]xim[oa]|[úu]ltim[oa]|est[ea]|pr[óo]x|ult|pas)/i)) {
       const reference = context.query.match(
-        /^(pr[óo]xim[oa]|[úu]ltim[oa]|est[ea]|prox|ult|pas)/i
+        /^(pr[óo]xim[oa]|[úu]ltim[oa]|est[ea]|pr[óo]x|ult|pas)/i
       )[1];
       const referenceLower = reference.toLowerCase();
       const baseUnits =
@@ -91,9 +103,12 @@ export default class DateSuggest extends EditorSuggest<IDateCompletion> {
           ? ["semana", ...weekdaysPt]
           : ["semana", "mês", "ano", ...weekdaysPt];
 
+      // Expandir "sem" para "semana" na query
+      const expandedQuery = queryLower.replace(/\bsem\b/, "semana");
+
       return baseUnits
         .map((val) => ({ label: `${reference} ${val}` }))
-        .filter((items) => items.label.toLowerCase().startsWith(queryLower));
+        .filter((items) => items.label.toLowerCase().startsWith(expandedQuery));
     }
 
     // Fallback para inglês: "next/last/this"

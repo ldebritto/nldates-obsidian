@@ -39,6 +39,7 @@ const WEEKDAY_PT_TO_EN: { [key: string]: string } = {
   sábado: "saturday",
   sabado: "saturday",
   sab: "saturday",
+  sáb: "saturday",
 };
 
 function getConfiguredChrono(): Chrono {
@@ -181,7 +182,7 @@ export default class NLDParser {
 
     // Regex para português E inglês
     const thisDateMatch = selectedText.match(/(?:this|est[ea])\s+([\wêç-]+)/i);
-    const nextDateMatch = selectedText.match(/(?:next|pr[óo]xim[oa]|prox)\s+([\wêç-]+)/i);
+    const nextDateMatch = selectedText.match(/(?:next|pr[óo]xim[oa]|pr[óo]x)\s+([\wêç-]+)/i);
     // "última X" = a mais recente (pode ser essa semana)
     const lastDateMatch = selectedText.match(/(?:last|[úu]ltim[oa]|ult)\s+([\wêç-]+)/i);
     // "X passada/passado" = da semana passada (sempre anterior à semana atual)
@@ -217,6 +218,7 @@ export default class NLDParser {
       sábado: 6,
       sabado: 6,
       sab: 6,
+      sáb: 6,
     };
 
     const numericDateMatch = selectedText
@@ -316,7 +318,7 @@ export default class NLDParser {
     const normalizeTimeUnit = (unit: string): string => {
       const lower = unit.toLowerCase();
       // Português para inglês
-      if (lower === "semana") return "week";
+      if (lower === "semana" || lower === "sem") return "week";
       if (lower === "mês" || lower === "mes") return "month";
       if (lower === "ano") return "year";
       if (lower === "dia") return "day";
@@ -328,7 +330,7 @@ export default class NLDParser {
     // "esta semana" / "this week"
     if (thisDateMatch) {
       const unit = normalizeTimeUnit(thisDateMatch[1]);
-      if (unit === "week" || thisDateMatch[1].toLowerCase() === "semana") {
+      if (unit === "week" || thisDateMatch[1].toLowerCase() === "semana" || thisDateMatch[1].toLowerCase() === "sem") {
         return parser.parseDate(`this ${weekStart}`, referenceDate);
       }
     }
@@ -337,7 +339,7 @@ export default class NLDParser {
     if (nextDateMatch) {
       const unit = normalizeTimeUnit(nextDateMatch[1]);
 
-      if (unit === "week" || nextDateMatch[1].toLowerCase() === "semana") {
+      if (unit === "week" || nextDateMatch[1].toLowerCase() === "semana" || nextDateMatch[1].toLowerCase() === "sem") {
         return parser.parseDate(`next ${weekStart}`, referenceDate, {
           forwardDate: true,
         });
@@ -375,8 +377,8 @@ export default class NLDParser {
         return result.toDate();
       }
 
-      // "semana passada"
-      if (matchedWord === "semana") {
+      // "semana passada" / "sem passada"
+      if (matchedWord === "semana" || matchedWord === "sem") {
         return window.moment().subtract(1, "week").startOf("week").toDate();
       }
     }
@@ -403,7 +405,7 @@ export default class NLDParser {
       }
 
       // "última semana", "último mês", "último ano"
-      if (matchedWord === "semana") {
+      if (matchedWord === "semana" || matchedWord === "sem") {
         return window.moment().subtract(1, "week").startOf("week").toDate();
       }
       if (matchedWord === "mês" || matchedWord === "mes") {
@@ -435,12 +437,18 @@ export default class NLDParser {
       });
     }
 
-    // Dia da semana sem quantificador (ex: "segunda", "sexta") = dia dessa semana
-    const bareWeekdayMatch = selectedText.match(/^(domingo|dom|segunda|segunda-feira|seg|terça|terça-feira|ter|quarta|quarta-feira|qua|quinta|quinta-feira|qui|sexta|sexta-feira|sex|sábado|sabado|sab)$/i);
+    // Dia da semana sem qualificador (ex: "segunda", "sexta") = sempre o próximo
+    const bareWeekdayMatch = selectedText.match(/^(domingo|dom|segunda|segunda-feira|seg|terça|terça-feira|ter|quarta|quarta-feira|qua|quinta|quinta-feira|qui|sexta|sexta-feira|sex|sábado|sabado|sab|sáb)$/i);
     if (bareWeekdayMatch) {
       const targetWeekday = weekdayMap[bareWeekdayMatch[1].toLowerCase()];
-      // Retorna o dia dessa semana, mesmo que já tenha passado
-      return window.moment().day(targetWeekday).toDate();
+      const today = window.moment();
+      const todayWeekday = today.day();
+      // Se já passou ou é hoje, vai para a próxima semana
+      if (targetWeekday <= todayWeekday) {
+        return today.clone().add(1, "week").day(targetWeekday).toDate();
+      }
+      // Ainda não passou, fica essa semana
+      return today.day(targetWeekday).toDate();
     }
 
     const parsed = parser.parse(selectedText, referenceDate, { locale });
