@@ -119,22 +119,45 @@ export default class DateSuggest extends EditorSuggest<IDateCompletion> {
         .filter((items) => items.label.toLowerCase().startsWith(context.query));
     }
 
-    // Dias da semana sem prefixo (PT-BR)
+    // Dias da semana sem prefixo (PT-BR) - com variações
     if (queryLower) {
-      const weekdayMatches = weekdaysPt.filter((day) =>
-        day.startsWith(queryLower)
-      );
+      // Primeiro verificar se é uma abreviação
+      const expandedWeekday = weekdayAbbrevPt[queryLower];
+      const weekdayMatches = expandedWeekday
+        ? [expandedWeekday]
+        : weekdaysPt.filter((day) => day.startsWith(queryLower));
+
       if (weekdayMatches.length) {
+        // Se encontrou exatamente um dia, mostrar variações
+        if (weekdayMatches.length === 1) {
+          const day = weekdayMatches[0];
+          return [
+            { label: day },
+            { label: `próxima ${day}` },
+            { label: `última ${day}` },
+            { label: `primeira ${day} do mês` },
+            { label: `última ${day} do mês` },
+          ];
+        }
+        // Se encontrou múltiplos dias, mostrar lista simples
         return weekdayMatches.map((val) => ({ label: val }));
       }
     }
 
-    // Dias da semana sem prefixo (EN)
+    // Dias da semana sem prefixo (EN) - com variações
     if (queryLower) {
       const weekdayMatches = weekdaysEn.filter((day) =>
         day.toLowerCase().startsWith(queryLower)
       );
       if (weekdayMatches.length) {
+        if (weekdayMatches.length === 1) {
+          const day = weekdayMatches[0];
+          return [
+            { label: day },
+            { label: `next ${day}` },
+            { label: `last ${day}` },
+          ];
+        }
         return weekdayMatches.map((val) => ({ label: val }));
       }
     }
